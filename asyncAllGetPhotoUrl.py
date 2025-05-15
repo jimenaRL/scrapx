@@ -1,12 +1,17 @@
-# Adapted from https://scrapfly.io/blog/how-to-scrape-twitter/ and 
+# Adapted from https://scrapfly.io/blog/how-to-scrape-twitter/ and
 # https://github.com/microsoft/playwright-python
 
+from __future__ import annotations
+from typing import Type
+from typing import Any
+
+import csv
 import json
-from argparse import ArgumentParser
 import asyncio
+from argparse import ArgumentParser
 from playwright.async_api import async_playwright
 
-async def main(username: str) -> dict:
+async def getData(username: str) -> None:
     """
     Scrape the url profile bio at x.com
     """
@@ -42,9 +47,21 @@ async def main(username: str) -> dict:
 
         await browser.close()
 
-if __name__ == "__main__":
-    ap = ArgumentParser()
-    ap.add_argument('--username', type=str)
-    args = ap.parse_args()
-    username = args.username
-    asyncio.run(main(username))
+
+ap = ArgumentParser()
+ap.add_argument('--usernamesFile', type=str)
+args = ap.parse_args()
+usernamesFile = args.usernamesFile
+
+with open(usernamesFile) as f:
+    usernames = [l.replace("\n", "") for l in f.readlines()]
+
+async def run_all() -> None:
+    coroutines = []
+    # prepare the coroutines
+    for username in usernames:
+        coroutines.append(getData(username))
+    # and execute them all at once
+    await asyncio.gather(*coroutines)
+
+asyncio.run(run_all())
