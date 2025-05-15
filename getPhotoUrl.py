@@ -1,7 +1,9 @@
 # Adapted from https://scrapfly.io/blog/how-to-scrape-twitter/
 
 import asyncio
+from argparse import ArgumentParser
 from playwright.sync_api import sync_playwright
+
 
 def scrape_profile(url: str) -> str:
     """
