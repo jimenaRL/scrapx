@@ -11,7 +11,10 @@ import asyncio
 from argparse import ArgumentParser
 from playwright.async_api import async_playwright, TimeoutError
 
-async def getData(username: str, cookies: Iterable(dict) | None = None) -> None:
+async def getData(
+    username: str,
+    cookies: Iterable(dict) | None = None,
+    timeout: int = 5000) -> None:
     """
     Scrape the url profile bio at x.com
     """
@@ -40,8 +43,9 @@ async def getData(username: str, cookies: Iterable(dict) | None = None) -> None:
         try:
             await page.wait_for_selector(
                 "[data-testid='swipe-to-dismiss']",
-                timeout=1000)
+                timeout=timeout)
         except TimeoutError as e:
+            print(f"Timeout of {timeout}ms exceeded for {username}")
             await browser.close()
             return
 
@@ -60,9 +64,11 @@ async def getData(username: str, cookies: Iterable(dict) | None = None) -> None:
 ap = ArgumentParser()
 ap.add_argument('--usernamesFile', type=str)
 ap.add_argument('--cookies', type=str, required=False, default=None)
+ap.add_argument('--timeout', type=int, required=False, default=5000)
 args = ap.parse_args()
 usernamesFile = args.usernamesFile
 cookies = args.cookies
+timeout = args.timeout
 
 with open(usernamesFile) as f:
     usernames = [l.replace("\n", "") for l in f.readlines()]
@@ -75,7 +81,7 @@ async def run_all() -> None:
     coroutines = []
     # prepare the coroutines
     for username in usernames:
-        coroutines.append(getData(username, cookies))
+        coroutines.append(getData(username, cookies, timeout))
     # and execute them all at once
     await asyncio.gather(*coroutines)
 

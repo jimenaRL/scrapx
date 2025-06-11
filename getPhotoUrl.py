@@ -6,7 +6,10 @@ import asyncio
 from argparse import ArgumentParser
 from playwright.sync_api import sync_playwright, TimeoutError
 
-def scrape_profile(url: str, cookies: Iterable(dict) | None = None) -> str:
+def scrape_profile(
+    url: str,
+    cookies: Iterable(dict) | None = None,
+    timeout: int = 5000) -> str:
     """
     Scrape the url profile bio at x.com
     """
@@ -33,7 +36,7 @@ def scrape_profile(url: str, cookies: Iterable(dict) | None = None) -> str:
         try:
             page.wait_for_selector(
                 "[data-testid='swipe-to-dismiss']",
-                timeout=2000)
+                timeout=timeout)
         except TimeoutError as e:
             return
 
@@ -47,10 +50,12 @@ if __name__ == "__main__":
     ap = ArgumentParser()
     ap.add_argument('--username', type=str)
     ap.add_argument('--cookies', type=str, required=False, default=None)
+    ap.add_argument('--timeout', type=int, required=False, default=5000)
     args = ap.parse_args()
     username = args.username
     cookies = args.cookies
+    timeout = args.timeout
     if cookies:
         with open(args.cookies) as f:
             cookies = list(map(json.loads, f.readlines()))
-    print(scrape_profile(f"https://x.com/{username}/photo", cookies))
+    print(scrape_profile(f"https://x.com/{username}/photo", cookies, timeout))
