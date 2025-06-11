@@ -9,7 +9,7 @@ import csv
 import json
 import asyncio
 from argparse import ArgumentParser
-from playwright.async_api import async_playwright
+from playwright.async_api import async_playwright, TimeoutError
 
 async def getData(username: str, cookies: Iterable(dict) | None = None) -> None:
     """
@@ -37,7 +37,13 @@ async def getData(username: str, cookies: Iterable(dict) | None = None) -> None:
         page.on("response", intercept_response)
         # go to url and wait for the page to load
         await page.goto(url)
-        await page.wait_for_selector("[data-testid='swipe-to-dismiss']")
+        try:
+            await page.wait_for_selector(
+                "[data-testid='swipe-to-dismiss']",
+                timeout=1000)
+        except TimeoutError as e:
+            await browser.close()
+            return
 
         # select appropiated tweet background request
         tweet_calls = [f for f in _xhr_calls if "UserByScreenName" in f.url]

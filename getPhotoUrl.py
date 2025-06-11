@@ -4,8 +4,7 @@ from __future__ import annotations
 import json
 import asyncio
 from argparse import ArgumentParser
-from playwright.sync_api import sync_playwright
-
+from playwright.sync_api import sync_playwright, TimeoutError
 
 def scrape_profile(url: str, cookies: Iterable(dict) | None = None) -> str:
     """
@@ -31,7 +30,12 @@ def scrape_profile(url: str, cookies: Iterable(dict) | None = None) -> str:
         page.on("response", intercept_response)
         # go to url and wait for the page to load
         page.goto(url)
-        page.wait_for_selector("[data-testid='swipe-to-dismiss']")
+        try:
+            page.wait_for_selector(
+                "[data-testid='swipe-to-dismiss']",
+                timeout=2000)
+        except TimeoutError as e:
+            return
 
         # find all tweet background requests
         tweet_calls = [f for f in _xhr_calls if "UserBy" in f.url]
@@ -49,5 +53,4 @@ if __name__ == "__main__":
     if cookies:
         with open(args.cookies) as f:
             cookies = list(map(json.loads, f.readlines()))
-    print(cookies)
     print(scrape_profile(f"https://x.com/{username}/photo", cookies))
