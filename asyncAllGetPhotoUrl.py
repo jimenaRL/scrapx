@@ -11,7 +11,7 @@ import asyncio
 from argparse import ArgumentParser
 from playwright.async_api import async_playwright
 
-async def getData(username: str) -> None:
+async def getData(username: str, cookies: Iterable(dict) | None = None) -> None:
     """
     Scrape the url profile bio at x.com
     """
@@ -29,6 +29,8 @@ async def getData(username: str) -> None:
     async with async_playwright() as pw:
         browser = await pw.chromium.launch(headless=True)
         context = await browser.new_context(viewport={"width": 640, "height": 360})
+        if cookies:
+            await context.add_cookies(cookies)
         page = await context.new_page()
 
         # enable background request intercepting:
@@ -42,25 +44,32 @@ async def getData(username: str) -> None:
         xhr = tweet_calls[0]
         data = await xhr.json()
 
-        with open(f"{username}.txt", 'w') as file:
-            file.write(json.dumps(data))
+        imageUrl = data['data']['user']['result']['avatar']['image_url']
+        with open(f"results/{username}.txt", 'w') as f:
+            f.write(imageUrl)
 
         await browser.close()
 
 
 ap = ArgumentParser()
 ap.add_argument('--usernamesFile', type=str)
+ap.add_argument('--cookies', type=str, required=False, default=None)
 args = ap.parse_args()
 usernamesFile = args.usernamesFile
+cookies = args.cookies
 
 with open(usernamesFile) as f:
     usernames = [l.replace("\n", "") for l in f.readlines()]
+
+if cookies:
+    with open(args.cookies) as f:
+        cookies = list(map(json.loads, f.readlines()))
 
 async def run_all() -> None:
     coroutines = []
     # prepare the coroutines
     for username in usernames:
-        coroutines.append(getData(username))
+        coroutines.append(getData(username, cookies))
     # and execute them all at once
     await asyncio.gather(*coroutines)
 
