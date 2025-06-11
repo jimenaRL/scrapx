@@ -1,5 +1,7 @@
 cookies.jsonl
 usernames.csv
+results/*
+.python-version
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
